@@ -1,0 +1,13 @@
+.tools
+.m2repo
+downloads
+.data
+.run
+.logs
+**/target
+mall-web/node_modules
+mall-web/dist
+.git
+.idea
+*.iml
+.DS_Store

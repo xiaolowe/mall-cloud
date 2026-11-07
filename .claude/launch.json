@@ -1,0 +1,24 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "mall-web",
+      "runtimeExecutable": "/Users/xiaolowe/agent/claude/mall-cloud/.tools/node/bin/node",
+      "runtimeArgs": [
+        "/Users/xiaolowe/agent/claude/mall-cloud/mall-web/node_modules/vite/bin/vite.js",
+        "--root",
+        "/Users/xiaolowe/agent/claude/mall-cloud/mall-web",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "5175"
+      ],
+      "port": 5175
+    },
+    {
+      "name": "mall-gateway",
+      "url": "http://localhost:9000",
+      "port": 9000
+    }
+  ]
+}

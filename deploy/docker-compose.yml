@@ -1,0 +1,162 @@
+name: mall-cloud
+
+x-service-env: &service-env
+  NACOS_ADDR: nacos:8848
+  MYSQL_HOST: mysql
+  MYSQL_PORT: "3306"
+  MYSQL_USER: root
+  MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD:-Mall@2026ChangeMe}
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"
+  JWT_SECRET: ${JWT_SECRET:-mall-cloud-change-this-secret-in-production-0123456789}
+  TZ: Asia/Shanghai
+
+x-service: &service
+  build:
+    context: ..
+    dockerfile: deploy/Dockerfile
+  restart: unless-stopped
+  depends_on:
+    mysql:
+      condition: service_healthy
+    redis:
+      condition: service_started
+    nacos:
+      condition: service_started
+  networks:
+    - mall
+  mem_limit: 384m
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mall-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-Mall@2026ChangeMe}
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    ports:
+      - "127.0.0.1:3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ../sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    networks:
+      - mall
+
+  redis:
+    image: redis:7-alpine
+    container_name: mall-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - mall
+
+  nacos:
+    image: nacos/nacos-server:v2.3.2
+    container_name: mall-nacos
+    restart: unless-stopped
+    environment:
+      MODE: standalone
+      NACOS_AUTH_ENABLE: "false"
+      JVM_XMS: 256m
+      JVM_XMX: 256m
+      JVM_XMN: 128m
+      TZ: Asia/Shanghai
+    ports:
+      - "127.0.0.1:8848:8848"
+      - "127.0.0.1:9848:9848"
+    volumes:
+      - nacos-data:/home/nacos/data
+      - nacos-logs:/home/nacos/logs
+    networks:
+      - mall
+
+  mall-user:
+    <<: *service
+    container_name: mall-user
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      args:
+        MODULE: mall-user
+    environment:
+      <<: *service-env
+
+  mall-product:
+    <<: *service
+    container_name: mall-product
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      args:
+        MODULE: mall-product
+    environment:
+      <<: *service-env
+
+  mall-inventory:
+    <<: *service
+    container_name: mall-inventory
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      args:
+        MODULE: mall-inventory
+    environment:
+      <<: *service-env
+
+  mall-order:
+    <<: *service
+    container_name: mall-order
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      args:
+        MODULE: mall-order
+    environment:
+      <<: *service-env
+
+  mall-payment:
+    <<: *service
+    container_name: mall-payment
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      args:
+        MODULE: mall-payment
+    environment:
+      <<: *service-env
+
+  mall-gateway:
+    <<: *service
+    container_name: mall-gateway
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      args:
+        MODULE: mall-gateway
+    environment:
+      <<: *service-env
+    ports:
+      - "9000:9000"
+
+networks:
+  mall:
+    driver: bridge
+
+volumes:
+  mysql-data:
+  redis-data:
+  nacos-data:
+  nacos-logs:

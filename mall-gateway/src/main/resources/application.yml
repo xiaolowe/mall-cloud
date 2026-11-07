@@ -1,0 +1,54 @@
+server:
+  port: 9000
+
+spring:
+  application:
+    name: mall-gateway
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_ADDR:127.0.0.1:8848}
+    gateway:
+      globalcors:
+        add-to-simple-url-handler-mapping: true
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+            allowCredentials: true
+      routes:
+        - id: mall-user
+          uri: lb://mall-user
+          predicates:
+            - Path=/api/auth/**,/api/users/**
+        - id: mall-product
+          uri: lb://mall-product
+          predicates:
+            - Path=/api/products/**,/api/categories/**
+        - id: mall-inventory
+          uri: lb://mall-inventory
+          predicates:
+            - Path=/api/inventory/**
+        - id: mall-order
+          uri: lb://mall-order
+          predicates:
+            - Path=/api/cart/**,/api/orders/**
+        - id: mall-payment
+          uri: lb://mall-payment
+          predicates:
+            - Path=/api/payments/**
+
+mall:
+  jwt:
+    secret: ${JWT_SECRET:mall-cloud-demo-secret-key-change-me-0123456789abcdef}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+
+logging:
+  level:
+    com.mall: info
