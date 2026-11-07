@@ -6,11 +6,19 @@ RUN npm config set registry https://registry.npmmirror.com && npm install
 COPY mall-web/ ./
 RUN npm run build
 
+FROM node:20-alpine AS admin
+WORKDIR /admin
+COPY mall-admin/package*.json ./
+RUN npm config set registry https://registry.npmmirror.com && npm install
+COPY mall-admin/ ./
+RUN npm run build
+
 FROM maven:3.9-eclipse-temurin-17 AS build
 ARG MODULE
 WORKDIR /build
 COPY . .
 COPY --from=web /web/dist /build/mall-web/dist
+COPY --from=admin /admin/dist /build/mall-admin/dist
 RUN mvn -s maven-settings.xml -B -DskipTests -pl ${MODULE} -am package
 
 FROM eclipse-temurin:17-jre

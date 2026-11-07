@@ -21,19 +21,19 @@ spring:
         - id: mall-user
           uri: lb://mall-user
           predicates:
-            - Path=/api/auth/**,/api/users/**
+            - Path=/api/auth/**,/api/users/**,/api/admin/users/**,/api/admin/stats/**
         - id: mall-product
           uri: lb://mall-product
           predicates:
-            - Path=/api/products/**,/api/categories/**
+            - Path=/api/products/**,/api/categories/**,/api/admin/categories/**,/api/admin/products/**,/api/admin/skus/**
         - id: mall-inventory
           uri: lb://mall-inventory
           predicates:
-            - Path=/api/inventory/**
+            - Path=/api/inventory/**,/api/admin/inventory/**
         - id: mall-order
           uri: lb://mall-order
           predicates:
-            - Path=/api/cart/**,/api/orders/**
+            - Path=/api/cart/**,/api/orders/**,/api/admin/orders/**
         - id: mall-payment
           uri: lb://mall-payment
           predicates:

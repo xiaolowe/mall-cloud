@@ -68,6 +68,10 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
         if (AUTH_LOGIN.equals(path) || AUTH_REGISTER.equals(path)) {
             return true;
         }
+        // Admin console runs without authentication for now; secure before production.
+        if (path.startsWith("/api/admin/")) {
+            return true;
+        }
         return HttpMethod.GET.equals(method)
                 && (path.startsWith("/api/products") || path.startsWith("/api/categories"));
     }

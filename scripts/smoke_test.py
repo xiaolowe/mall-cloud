@@ -33,11 +33,11 @@ def main():
     print(f"   userId={auth['user']['id']}")
 
     print("2. products")
-    page = call("GET", "/api/products?page=1&size=20")
+    page = call("GET", "/api/products?page=1&size=50")
     products = page["records"]
-    assert len(products) == 6, products
-    sku_a = call("GET", f"/api/products/{products[0]['id']}")["skus"][0]
-    sku_b = call("GET", f"/api/products/{products[1]['id']}")["skus"][0]
+    assert len(products) >= 6, f"expected at least 6 products, got {len(products)}"
+    sku_a = call("GET", f"/api/products/{products[-1]['id']}")["skus"][0]
+    sku_b = call("GET", f"/api/products/{products[-2]['id']}")["skus"][0]
     print(f"   {len(products)} products, sku={sku_a['title']} {sku_a['price']}")
 
     print("3. address")

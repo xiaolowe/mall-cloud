@@ -95,6 +95,80 @@ public class OrderService {
         return PageResult.of(result.getTotal(), records);
     }
 
+    public PageResult<OrderVO> adminList(int page, int size, Integer status, String orderNo) {
+        LambdaQueryWrapper<Order> query = new LambdaQueryWrapper<>();
+        if (status != null) {
+            query.eq(Order::getStatus, status);
+        }
+        if (orderNo != null && !orderNo.isBlank()) {
+            query.like(Order::getOrderNo, orderNo);
+        }
+        query.orderByDesc(Order::getId);
+        Page<Order> result = orderMapper.selectPage(new Page<>(page, size), query);
+        List<OrderVO> records = result.getRecords().stream()
+                .map(order -> toVO(order, findItems(order.getId())))
+                .toList();
+        return PageResult.of(result.getTotal(), records);
+    }
+
+    public OrderVO adminGet(String orderNo) {
+        Order order = findOrder(orderNo);
+        return toVO(order, findItems(order.getId()));
+    }
+
+    public void adminShip(String orderNo) {
+        Order order = findOrder(orderNo);
+        if (order.getStatus() != Constants.ORDER_STATUS_PAID) {
+            throw new BizException("只有已支付订单可以发货");
+        }
+        int rows = orderMapper.update(null,
+                new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<Order>()
+                        .eq(Order::getId, order.getId())
+                        .eq(Order::getStatus, Constants.ORDER_STATUS_PAID)
+                        .set(Order::getStatus, Constants.ORDER_STATUS_COMPLETED));
+        if (rows == 0) {
+            throw new BizException("订单状态已变更，请刷新后重试");
+        }
+    }
+
+    public void adminClose(String orderNo) {
+        Order order = findOrder(orderNo);
+        if (order.getStatus() != Constants.ORDER_STATUS_PENDING_PAYMENT) {
+            throw new BizException("只有待支付订单可以关闭");
+        }
+        restoreStock(order);
+        int rows = orderMapper.update(null,
+                new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<Order>()
+                        .eq(Order::getId, order.getId())
+                        .eq(Order::getStatus, Constants.ORDER_STATUS_PENDING_PAYMENT)
+                        .set(Order::getStatus, Constants.ORDER_STATUS_CANCELLED)
+                        .set(Order::getCancelReason, "管理员关闭"));
+        if (rows == 0) {
+            throw new BizException("订单状态已变更，请刷新后重试");
+        }
+    }
+
+    public java.util.Map<String, Object> adminStats() {
+        java.util.Map<String, Object> stats = new java.util.LinkedHashMap<>();
+        stats.put("totalOrders", orderMapper.selectCount(null));
+        stats.put("pendingPayment", orderMapper.selectCount(
+                new LambdaQueryWrapper<Order>().eq(Order::getStatus, Constants.ORDER_STATUS_PENDING_PAYMENT)));
+        stats.put("paid", orderMapper.selectCount(
+                new LambdaQueryWrapper<Order>().eq(Order::getStatus, Constants.ORDER_STATUS_PAID)));
+        stats.put("completed", orderMapper.selectCount(
+                new LambdaQueryWrapper<Order>().eq(Order::getStatus, Constants.ORDER_STATUS_COMPLETED)));
+        stats.put("cancelled", orderMapper.selectCount(
+                new LambdaQueryWrapper<Order>().eq(Order::getStatus, Constants.ORDER_STATUS_CANCELLED)));
+        java.math.BigDecimal sales = orderMapper.selectList(new LambdaQueryWrapper<Order>()
+                        .in(Order::getStatus, List.of(Constants.ORDER_STATUS_PAID, Constants.ORDER_STATUS_COMPLETED)))
+                .stream()
+                .map(Order::getTotalAmount)
+                .filter(java.util.Objects::nonNull)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+        stats.put("salesAmount", sales);
+        return stats;
+    }
+
     public OrderVO get(String orderNo) {
         return get(UserContext.requireUserId(), orderNo);
     }

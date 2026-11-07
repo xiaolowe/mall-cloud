@@ -65,6 +65,24 @@ Vue 前端在 `mall-web/`，开发时用 Vite 热更新（API 代理到网关 90
 
 打开 <http://127.0.0.1:5175>。改完代码后执行 `./scripts/build.sh`，产物会自动打进网关 jar，由 9000 端口提供。
 
+### 管理后台
+
+后台是独立工程 `mall-admin/`，生产地址 <http://127.0.0.1:9000/admin/>，开发模式：
+
+```bash
+./scripts/dev-admin.sh
+```
+
+打开 <http://127.0.0.1:5176>。功能包括数据看板、商品/分类/SKU 增删改、上下架、库存补货扣减、全量订单查询/发货/关闭、用户列表。
+
+> 管理接口在 `/api/admin/**`，**当前未启用鉴权**，仅适合本地演示；上线前必须补管理员登录与权限校验。
+
+后台端到端测试：
+
+```bash
+python3 scripts/admin_smoke_test.py
+```
+
 > 前端使用 hash 路由（`/#/orders`），因此网关不需要额外的 SPA fallback；如果以后改成 history 模式，需要在 Nginx 或网关加一条回退到 `index.html` 的规则。
 
 > 本机若开启了系统 HTTP 代理（如 Clash/Surge），启动脚本会给 JVM 加 `-Dhttp.nonProxyHosts=*`，避免服务间通过局域网 IP 调用时被代理拦截。3306 已被机器上的其他 MySQL 占用，所以本项目 MySQL 使用 3307。
@@ -105,6 +123,7 @@ mall-cloud/
 ├── mall-order/
 ├── mall-payment/
 ├── mall-web/              # Vue 3 + Vite 前端（商品、购物车、订单、地址）
+├── mall-admin/            # Vue 3 + Vite 管理后台（看板、商品、分类、库存、订单、用户）
 ├── sql/init.sql           # 5 个库、表结构与商品种子数据
 ├── scripts/               # 下载、初始化、启停脚本
 ├── deploy/                # Dockerfile、docker-compose、云部署

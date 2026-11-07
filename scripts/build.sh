@@ -9,6 +9,10 @@ if [[ -x "$NODE_HOME/bin/node" && -f "$MALL_HOME/mall-web/package.json" ]]; then
   "$MALL_HOME/scripts/build-web.sh"
 fi
 
+if [[ -x "$NODE_HOME/bin/node" && -f "$MALL_HOME/mall-admin/package.json" ]]; then
+  "$MALL_HOME/scripts/build-admin.sh"
+fi
+
 "$MAVEN_HOME/bin/mvn" -s "$MALL_HOME/maven-settings.xml" \
   -Dmaven.repo.local="$MALL_HOME/.m2repo" \
   -DskipTests clean package "$@"
